@@ -18,7 +18,7 @@
   "threshold": 0.5,
   "source_sha256": "3f891d5fbaa3a38a4e74d4cc08be7ce6261f9c193c71535508deec9617dca4da",
   "model_sha256": "e2e183b49a0d8f96177750c85811a126881041a966e277835eb003a2da1e5924",
-  "created_at_utc": "2026-11-07T18:41:31.905029+00:00",
+  "created_at_utc": "2026-11-07T18:51:22.788885+00:00",
   "packages": {
     "scikit-learn": "1.6.1",
     "numpy": "2.2.6",
