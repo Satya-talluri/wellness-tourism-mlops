@@ -92,10 +92,7 @@ def publish_project(token, repository_name, allow_public=False, root=ROOT):
         if elements:
             tree = repo.create_git_tree(elements, base_tree=parent.tree)
             commit = repo.create_git_commit(
-                "Publish customer-purchase MLOps project\n\n"
-                "Co-authored-by: Copilot "
-                "<223556219+Copilot@users.noreply.github.com>\n"
-                "Copilot-Session: 623e33ed-15d0-49d2-8053-b54f3c42b607",
+                "Publish Wellness Tourism MLOps pipeline files",
                 tree,
                 [parent],
             )

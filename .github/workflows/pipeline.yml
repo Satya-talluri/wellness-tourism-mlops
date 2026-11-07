@@ -115,7 +115,5 @@ jobs:
             echo "No model changes to commit."
           else
             git commit -m "Update tested pre-contact model [skip ci]" \
-              -m "Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
-          Copilot-Session: 623e33ed-15d0-49d2-8053-b54f3c42b607"
             git push origin HEAD:main
           fi

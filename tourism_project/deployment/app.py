@@ -23,9 +23,8 @@ st.set_page_config(page_title="Visit with Us", layout="centered")
 st.title("Visit with Us: Package Purchase Prediction")
 st.caption("Pre-contact decision support using existing customer-profile data.")
 st.info(
-    "Use information already held in the CRM before the current sales contact. "
-    "The training label represents historical package purchases, not a verified "
-    "wellness-only outcome. This educational model is not a purchase guarantee."
+    "Enter the customer's pre-contact profile details below to estimate "
+    "their likelihood of purchasing the Wellness Tourism Package."
 )
 if not MODEL_PATH.exists() or not METADATA_PATH.exists():
     st.error("Model files are missing. Run the training pipeline before deploying.")
