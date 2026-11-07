@@ -114,6 +114,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No model changes to commit."
           else
-            git commit -m "Update tested pre-contact model [skip ci]" \
+            git commit -m "Update tested pre-contact model [skip ci]" 
             git push origin HEAD:main
           fi
