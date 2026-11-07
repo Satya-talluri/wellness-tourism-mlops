@@ -1,0 +1,121 @@
+name: Wellness Tourism MLOps
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "tourism_project/data/**"
+      - "tourism_project/model_building/**"
+      - "tourism_project/schema.py"
+      - "tourism_project/deployment/app.py"
+      - "**/requirements.txt"
+      - "tests/**"
+      - ".github/workflows/pipeline.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wellness-tourism-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  register-dataset:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: "**/requirements.txt"
+      - name: Install training dependencies
+        run: pip install -r tourism_project/requirements.txt pytest==7.4.4
+      - name: Check the dataset and deterministic cleaning
+        run: |
+          python -m tourism_project.model_building.data_register
+          python -m pytest tests/test_data.py -q
+      - name: Upload registration record
+        uses: actions/upload-artifact@v4
+        with:
+          name: registered-data
+          path: |
+            tourism_project/data/tourism.csv
+            reports/registration.json
+          if-no-files-found: error
+
+  data-preparation:
+    needs: register-dataset
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: "**/requirements.txt"
+      - name: Install training dependencies
+        run: pip install -r tourism_project/requirements.txt
+      - name: Clean and split the repository-local dataset
+        run: python -m tourism_project.model_building.prep
+      - name: Pass train, test, and profile groups to the training job
+        uses: actions/upload-artifact@v4
+        with:
+          name: data-splits
+          path: artifacts/data-splits/
+          if-no-files-found: error
+
+  model-training:
+    needs: data-preparation
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: "**/requirements.txt"
+      - name: Install model, app, and test dependencies
+        run: |
+          pip install -r tourism_project/requirements.txt
+          pip install -r tourism_project/deployment/requirements.txt pytest==7.4.4 black==24.4.2
+      - name: Download prepared data from the previous job
+        uses: actions/download-artifact@v4
+        with:
+          name: data-splits
+          path: artifacts/data-splits
+      - name: Tune both models and log every trial to local MLflow
+        run: python -m tourism_project.model_building.train
+      - name: Validate code and the deployed prediction path
+        run: |
+          python -m black --check tourism_project tests
+          python -m pytest tests -q
+      - name: Preserve evaluations, comparison model, and MLflow experiments
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-evaluation-and-tracking
+          path: reports/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Commit the tested pre-contact model to main
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tourism_project/deployment/model.joblib tourism_project/deployment/model_metadata.json
+          if git diff --cached --quiet; then
+            echo "No model changes to commit."
+          else
+            git commit -m "Update tested pre-contact model [skip ci]" \
+              -m "Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
+          Copilot-Session: 623e33ed-15d0-49d2-8053-b54f3c42b607"
+            git push origin HEAD:main
+          fi
